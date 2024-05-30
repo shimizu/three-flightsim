@@ -67,6 +67,7 @@ export function createController(gameWindow) {
             dy = -20;
         }
         panCamera(dx, dy);
+        updateCameraPositon();
         
 
         //カメラリセット
@@ -75,7 +76,7 @@ export function createController(gameWindow) {
         }
         //カメラ回転
         if (pushKeys["z"]) {
-            rotateCamera(360, 0);
+            rotateCamera(180, 0);
         }
 
         console.log("pushKeys", pushKeys)
@@ -84,7 +85,6 @@ export function createController(gameWindow) {
 
     function onKeyUp(event) {
         pushKeys[event.key.toLowerCase()] = false;
-        console.log(pushKeys)
     }
 
 
@@ -94,11 +94,13 @@ export function createController(gameWindow) {
         // カメラの回転を処理する
         if (event.buttons & ROTATE_MOUSE__BUTTON) {
             rotateCamera(event.movementX, event.movementY);
+            updateCameraPositon();
         }
 
         // カメラのパン操作
         if (event.buttons & PAN_MOUSE__BUTTON) {
             panCamera(event.movementX, event.movementY);
+            updateCameraPositon();
         }
     }
 
@@ -107,9 +109,35 @@ export function createController(gameWindow) {
      * @param {MouseEvent} event Mouse event arguments
      */
     function onMouseScroll(event) {
-        cameraRadius += event.deltaY * ZOOM_SENSITIVITY;
+        
+        var factor = 15;
+        var mX = (event.clientX / gameWindow.clientWidth) * 2 - 1;
+        var mY = -(event.clientY / gameWindow.clientHeight) * 2 + 1;
+        var vector = new THREE.Vector3(mX, mY , 0.1);
+        vector.unproject(camera);
+        vector.sub(camera.position);
+        if (event.deltaY < 0) {
+            camera.position.addVectors(camera.position, vector.setLength(factor));
+        } else {
+            camera.position.subVectors(camera.position, vector.setLength(factor));
+        }
+
+
+        const x = camera.position.x;
+        const y = camera.position.y;
+        const z = camera.position.z;
+
+        cameraOrgin = new THREE.Vector3(x, y, z);
+
+        const translatedX = x - cameraOrgin.x;
+        const translatedY = y - cameraOrgin.y;
+        const translatedZ = z - cameraOrgin.z;
+
+        const radius = Math.sqrt(translatedX * translatedX + translatedY * translatedY + translatedZ * translatedZ);
+        cameraRadius = radius ;
         cameraRadius = Math.min(MAX_CAMERA_RADIUS, Math.max(MIN_CAMERA_RADIUS, cameraRadius));
-        updateCameraPositon();
+        
+        updateCameraPositon(); 
     }
 
     //カメラを回転する
@@ -117,7 +145,6 @@ export function createController(gameWindow) {
         cameraAzimuth += -(dx * AZIMUTH_SENSITIVITY);
         cameraElevation += (dy * ELEVATION_SENSITIVITY);
         cameraElevation = Math.min(MAX_CAMERA_ELEVATION, Math.max(MIN_CAMERA_ELEVATION, cameraElevation));
-        updateCameraPositon();
     }
 
     //カメラをパンする
@@ -126,7 +153,6 @@ export function createController(gameWindow) {
         const left = new THREE.Vector3(1, 0, 0).applyAxisAngle(Y_AXIS, cameraAzimuth * DEG2RAD);
         cameraOrgin.add(forward.multiplyScalar(PAN_SENSITIVITY * dy));
         cameraOrgin.add(left.multiplyScalar(PAN_SENSITIVITY * dx));   
-        updateCameraPositon();
     }
 
     //カメラをリセットする

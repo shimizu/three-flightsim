@@ -35,6 +35,7 @@ export function createScene() {
 
     scene.add(hormuz);
 
+
     setupLight();
   }
 

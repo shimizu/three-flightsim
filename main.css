@@ -11,3 +11,10 @@ html, body {
 #render-target {
     height: 100%;
 }
+
+#info {
+    position: absolute;
+    color:white;
+    right: 0;
+    padding: 10px;
+}
